@@ -93,9 +93,8 @@ World generation multithreaded:
 64: 01:75.75419
 """
 
-@export var TERRAIN_GENERATOR : TerrainGenerator
+@export var GENERATION_SETTINGS : TerrainGeneratorSettings
 @export var WORLD_SIZE : Vector2i = Vector2i(32, 32)
-@export var CHUNK_SIZE : Vector2i = Vector2i(8, 8)
 @export var BLOCK_SIZE : Vector3 = Vector3(1, 1, 1)
 
 @export var CHUNK_SCENE : PackedScene
@@ -114,20 +113,14 @@ func _ready() -> void:
 	randomize()
 
 	world_size_in_chunks = Vector2i(
-		ceil(WORLD_SIZE.x / float(CHUNK_SIZE.x)),
-		ceil(WORLD_SIZE.y / float(CHUNK_SIZE.y)),
+		ceil(WORLD_SIZE.x / float(TerrainGenerator.chunk_size.x)),
+		ceil(WORLD_SIZE.y / float(TerrainGenerator.chunk_size.z)),
 	)
 
 	# Setup terrain generator
-	TERRAIN_GENERATOR.world_size = WORLD_SIZE
-	TERRAIN_GENERATOR.chunk_size.x = CHUNK_SIZE.x
-	TERRAIN_GENERATOR.chunk_size.z = CHUNK_SIZE.y
-	TERRAIN_GENERATOR.terrain_seed = randi()
+	TerrainGenerator.world_size = world_size_in_chunks
 
 func generate_terrain() -> void:
-	# Update world seed
-	Global.world_seed = TERRAIN_GENERATOR.terrain_seed
-
 	progress = 0
 	progress_max = world_size_in_chunks.x * world_size_in_chunks.y
 
@@ -140,15 +133,15 @@ func generate_terrain() -> void:
 		for x in range(world_size_in_chunks.y):
 
 			var new_chunk = CHUNK_SCENE.instantiate().duplicate()
-			new_chunk.TERRAIN_GENERATOR = TERRAIN_GENERATOR
-			new_chunk.CHUNK_OFFSET = Vector2i(x * CHUNK_SIZE.x, z * CHUNK_SIZE.y)
+			#new_chunk.TERRAIN_GENERATOR = TERRAIN_GENERATOR
+			#new_chunk.CHUNK_OFFSET = Vector2i(x * CHUNK_SIZE.x, z * CHUNK_SIZE.y)
 			new_chunk.BLOCK_SIZE = BLOCK_SIZE
 
-			new_chunk.position = Vector3(
-				-BLOCK_SIZE.x / 2.0 - (world_size_in_chunks.x / 2.0) * CHUNK_SIZE.x + x * CHUNK_SIZE.x,
-				0,
-				-BLOCK_SIZE.z / 2.0 - (world_size_in_chunks.y / 2.0) * CHUNK_SIZE.y + z * CHUNK_SIZE.y
-			) + Vector3(0, 0, 0)
+			#new_chunk.position = Vector3(
+				#-BLOCK_SIZE.x / 2.0 - (world_size_in_chunks.x / 2.0) * CHUNK_SIZE.x + x * CHUNK_SIZE.x,
+				#0,
+				#-BLOCK_SIZE.z / 2.0 - (world_size_in_chunks.y / 2.0) * CHUNK_SIZE.y + z * CHUNK_SIZE.y
+			#) + Vector3(0, 0, 0)
 
 			_chunk_container.add_child(new_chunk)
 
@@ -167,24 +160,24 @@ func _chunk_generated(chunk : Chunk) -> void:
 	progress += 1
 	@warning_ignore("integer_division")
 	log_text("Generated chunk   (%3d ; %-3d)" % [
-		chunk.CHUNK_OFFSET.x / CHUNK_SIZE.x,
-		chunk.CHUNK_OFFSET.y / CHUNK_SIZE.y
+		chunk.CHUNK_OFFSET.x / TerrainGenerator.chunk_size.x,
+		chunk.CHUNK_OFFSET.y / TerrainGenerator.chunk_size.z
 	])
 
-	chunk_finished.emit(chunk.CHUNK_OFFSET / CHUNK_SIZE)
+	chunk_finished.emit(chunk.CHUNK_OFFSET / Vector2i(TerrainGenerator.chunk_size.x, TerrainGenerator.chunk_size.z))
 
 	if progress >= progress_max:
 		#await get_tree().create_timer(1).timeout
 
 		# Debug logging
-		print("World seed: %d" % TERRAIN_GENERATOR.terrain_seed)
+		print("World seed: %d" % TerrainGenerator.generator_seed)
 		var took_usec = Time.get_ticks_usec() - start_time
 		var took_ms = roundi(took_usec / 1_000.0)
 		var took_s = roundi(took_usec / 1_000_000.0)
 		var took_m = int(took_s / 60.0)
 		print("A world [%d;%d] with chunk size of [%d;%d] (%5d chunks) took %02d:%02d.%03d" % [
-			WORLD_SIZE.x, WORLD_SIZE.y,
-			CHUNK_SIZE.x, CHUNK_SIZE.y,
+			TerrainGenerator.max_world_size.x, TerrainGenerator.max_world_size.y,
+			TerrainGenerator.chunk_size.x, TerrainGenerator.chunk_size.z,
 			progress_max,
 			took_m, took_s, took_ms
 		])

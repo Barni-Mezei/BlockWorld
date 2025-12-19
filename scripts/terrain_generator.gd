@@ -1,61 +1,32 @@
-extends Resource
-class_name TerrainGenerator
+@icon("res://ui/icons/PhysicsMaterial.svg")
+
+extends Node
+
+@export_group("General settings")
+@export var chunk_size : Vector3i = Vector3i(32, 64, 32)
+@export var max_world_size : Vector2i = Vector2i.ZERO
 
 @export_group("Generation settings")
-@export var chunk_size : Vector3i = Vector3i(32, 64, 32)
-@export var terrain_start : int = 32
-@export var terrain_end : int = 64
-@export var deepslate_level : int = 16
+@export var settings : TerrainGeneratorSettings
+@export var generator_seed : int = -1
 
-@export var height_noise : FastNoiseLite
-@export var biome_noise : FastNoiseLite
-@export var cave_noise : FastNoiseLite
-@export var river_noise : FastNoiseLite
-
-@export_group("Depth dependent values")
-@export var iron_ore_distribution : Curve
-@export var coal_ore_distribution : Curve
-@export var diamond_ore_distribution : Curve
-
-@export var underground_patch_size : Curve
-@export var noise_cave_size_stone : Curve
-@export var noise_cave_size_deepslate : Curve
-
-@export_subgroup("Feature frequencies")
-@export var underground_patch_frequency : int = 1500
-@export var tree_frequency : int = 40
-@export var foliage_frequency : int = 3
-@export var mud_frequency : int = 80
-@export_range(0, 5.0, 0.01) var iron_ore_multiplier : float = 0.75
-
-@export_group("Terrain features")
-@export var enable_trees : bool = true
-@export_enum("oak", "birch") var TREE_TYPES : int = 0
-@export var enable_foliage : bool = true
-@export var use_bushes_in_foliage : bool = true
-@export var enable_ores : bool = true
-@export var enable_underground_patches : bool = true
-@export var enable_caves : bool = true
-@export var enable_mud : bool = true
-@export var enable_water : bool = false
-
-var packed_block_data_structure : Dictionary = {
+var packed_block_data_structure : Dictionary[StringName, int] = {
 	"block_type": 10,
 	"light_level": 4,
 	"biome": 4,
 }
 
-var packed_block_data : Dictionary = {
+var packed_block_data : Dictionary[StringName, Dictionary] = {
 	"masks": {},
 	"offsets": {},
 }
 
-var terrain_seed : int = -1
-var world_size : Vector2i
 
-func _init() -> void:
-	randomize()
+### !!! This array holds all world data !!!
+var chunks : Dictionary[Vector2i, PackedInt32Array] = {}
 
+
+func _ready() -> void:
 	# Generate block data bitmasks
 	var offset = 0
 	for data_key in packed_block_data_structure:
@@ -68,40 +39,19 @@ func _init() -> void:
 
 		offset += length
 
-	#prints(get_block_indexv(Vector3(0,0,0), 2,2))
-	#get_block_by_index([], 8)
 
-	var block_data : Dictionary[String, int] = {
-		"block_type": 1024,
-		"light_level": 16,
-		"biome": 0,
-	}
+func set_seed(new_seed : int) -> void:
+	generator_seed = new_seed
+	PositionalNoiseGenerator.set_seed(new_seed)
 
-	var packed = pack_block_data(block_data)
+	settings.height_noise.seed = new_seed
+	settings.biome_noise.seed = new_seed
+	settings.cave_noise.seed = new_seed
+	settings.river_noise.seed = new_seed
 
-	#prints(String.num_uint64(packed, 2).lpad(32, "0"))
 
-	var unpacked = unpack_block_data(packed)
-	#prints(unpacked)
 
-	packed = set_packed_block_data(packed, "light_level", 2)
-
-	unpacked = unpack_block_data(packed)
-	#prints(unpacked)
-
-# Utils
-static func get_block_o(data : Array, pos : Vector3) -> Blocks.BLOCK_TYPES:
-	var x = int(pos.x)
-	var y = int(pos.y)
-	var z = int(pos.z)
-
-	if x >= 0 and x < len(data):
-		if z >= 0 and z < len(data[x]):
-			if y >= 0 and y < len(data[x][z]):
-				return data[x][z][y]
-
-	return Blocks.BLOCK_TYPES.air
-
+## Block data manager functions
 func unpack_block_data(block_data : int) -> Dictionary[String, int]:
 	var block_data_out : Dictionary[String, int] = {}
 
@@ -109,6 +59,9 @@ func unpack_block_data(block_data : int) -> Dictionary[String, int]:
 		block_data_out[key] = (block_data >> packed_block_data["offsets"][key]) & packed_block_data["masks"][key]
 
 	return block_data_out
+
+func unpack_block_data_type(block_data : int) -> int:
+	return block_data & packed_block_data["masks"]["block_type"]
 
 func set_packed_block_data(block_data : int, key : String, value : int) -> int:
 	var mask = packed_block_data["masks"][key] << packed_block_data["offsets"][key]
@@ -127,108 +80,63 @@ func pack_block_data(block_data : Dictionary[String, int]) -> int:
 
 	return block_data_out
 
-func get_block_by_index(data : PackedInt32Array, index : int) -> int:
+
+
+## Chunk array manager functions
+func _get_error_block() -> Dictionary[String, int]:
+	return {
+		"block_type": Blocks.BLOCK_TYPES.air,
+		"light_level": 0,
+		"biome": 0,
+	}
+
+func get_packed_block_by_index(data : PackedInt32Array, index : int) -> int:
 	if index < 0 or index > data.size(): return Blocks.BLOCK_TYPES.air
-	
+
 	return data[index]
 
-func get_block(data : PackedInt32Array, pos : Vector3i) -> Dictionary[String, int]:
+func get_block_by_pos(data : PackedInt32Array, pos : Vector3i) -> Dictionary[String, int]:
 	var index = get_block_indexv(pos)
-	if index < 0 or index > data.size():
-		return {
-			"block_type": Blocks.BLOCK_TYPES.air,
-			"light_level": 0,
-			"biome": 0,
-		}
+	if index < 0 or index > data.size(): return _get_error_block()
 
 	return unpack_block_data(data[index])
 
-func check_block(data : Array, pos : Vector3, allowed_block_types : Array[Blocks.BLOCK_TYPES]) -> bool:
-	var x = int(pos.x)
-	var y = int(pos.y)
-	var z = int(pos.z)
+func get_block_type(data : PackedInt32Array, pos : Vector3i) -> Blocks.BLOCK_TYPES:
+	var index = get_block_indexv(pos)
+	if index < 0 or index > data.size(): return Blocks.BLOCK_TYPES.air
 
-	if x >= 0 and x < len(data):
-		if z >= 0 and z < len(data[x]):
-			if y >= 0 and y < len(data[x][z]):
-				return data[x][z][y] in allowed_block_types
+	return unpack_block_data_type(data[index]) as Blocks.BLOCK_TYPES
 
-	return false
-
-func set_block_o(data : Array, pos : Vector3, block : Blocks.BLOCK_TYPES) -> void:
-	var x = int(pos.x)
-	var y = int(pos.y)
-	var z = int(pos.z)
-
-	if x >= 0 and x < len(data):
-		if z >= 0 and z < len(data[x]):
-			if y >= 0 and y < len(data[x][z]):
-				data[x][z][y] = block
-
-
-func set_block(data : PackedInt32Array, pos : Vector3i, block_type : Blocks.BLOCK_TYPES) -> void:
+func set_block_type(data : PackedInt32Array, pos : Vector3i, block_type : Blocks.BLOCK_TYPES) -> void:
 	var index : int = get_block_indexv(pos)
 	if index < 0 or index > data.size(): return
 
 	data[index] = set_packed_block_data(data[index], "block_type", block_type)
 
+func check_block_type(data : PackedInt32Array, pos : Vector3i, allowed_block_types : Array[Blocks.BLOCK_TYPES]) -> bool:
+	var block_type = get_block_type(data, pos)
+	return block_type in allowed_block_types
 
-func replace_block(data : Array, pos : Vector3, block : Blocks.BLOCK_TYPES, replaced_blocks : Array[Blocks.BLOCK_TYPES]) -> void:
-	var x = int(pos.x)
-	var y = int(pos.y)
-	var z = int(pos.z)
+func replace_block(data : PackedInt32Array, pos : Vector3i, block_type : Blocks.BLOCK_TYPES, replaced_blocks : Array[Blocks.BLOCK_TYPES]) -> void:
+	if check_block_type(data, pos, replaced_blocks):
+		set_block_type(data, pos, block_type)
 
-	if x >= 0 and x < len(data):
-		if z >= 0 and z < len(data[x]):
-			if y >= 0 and y < len(data[x][z]):
-				# Replace block if listed in the allowed blocks
-				if data[x][z][y] in replaced_blocks:
-					data[x][z][y] = block
-
-func replace_sphere(data : Array, pos : Vector3, radius : float, block : Blocks.BLOCK_TYPES, replaced_blocks : Array[Blocks.BLOCK_TYPES]) -> void:
-	var r_start = -int(round(radius))
-	var r_end = int(round(radius)) + 1
+func replace_sphere(data : PackedInt32Array, pos : Vector3i, radius : float, block_type : Blocks.BLOCK_TYPES, replaced_blocks : Array[Blocks.BLOCK_TYPES]) -> void:
+	var r_start : int = -int(round(radius))
+	var r_end : int = int(round(radius)) + 1
 	
 	for y in range(r_start, r_end):
 		for x in range(r_start, r_end):
 			for z in range(r_start, r_end):
-				var offset := Vector3(x, y, z)
+				var offset := Vector3i(x, y, z)
 				if offset.length() > radius - 0.5: continue
 				var block_pos = pos + offset
-				replace_block(data, block_pos, block, replaced_blocks)
+				replace_block(data, block_pos, block_type, replaced_blocks)
 
-func generate_oak_tree(data : Array, pos : Vector3) -> void:
-	# Tree trunk
-	for y in range(0, 5):
-		set_block(data, pos + Vector3(0, y, 0), Blocks.BLOCK_TYPES.oak_log)
 
-	# Big leaf blob
-	for y in range(3, 5):
-		for x in range(-2, 3):
-			for z in range(-2, 3):
-				if x == 0 and z == 0: continue
-				if abs(x) + abs(z) == 4 and randi_range(0, 3) == 0: continue
-				set_block(data, pos + Vector3(x, y, z), Blocks.BLOCK_TYPES.oak_leaves)
 
-	# Small leaf blob
-	for y in range(5, 7):
-		for x in range(-1, 2):
-			for z in range(-1, 2):
-				if abs(x) + abs(z) == 2 and (randi_range(0, 10) > 1 or y == 6): continue
-				set_block(data, pos + Vector3(x, y, z), Blocks.BLOCK_TYPES.oak_leaves)
-
-func get_height_at(pos : Vector2) -> int:
-	return round(
-		clamp(remap( # Constrain the noise value between 0 and the specified world height
-			height_noise.get_noise_2dv(pos),
-		-1, 1, terrain_start, terrain_end), terrain_start, terrain_end) 
-	)
-
-func get_cave_at(pos : Vector3) -> float:
-	return clamp(remap(
-		cave_noise.get_noise_3dv(pos),
-	-1,0, 0,1), 0, 1)
-
+## Coordinate transforms
+# Chunk local transforms
 func get_block_index(x : int, y : int, z : int, width : int = chunk_size.x, depth : int = chunk_size.z) -> int:
 	return y * (width * depth) + z * width + x
 
@@ -243,33 +151,125 @@ func get_block_pos(index : int, width : int = chunk_size.x, depth : int = chunk_
 		(index / width) % depth
 	)
 
-# Chunk generators
-func generate_chunk(chunk_offset : Vector2i) -> PackedInt32Array:
-	if terrain_seed == -1: terrain_seed = randi()
-	height_noise.seed = terrain_seed
-	biome_noise.seed = terrain_seed
-	cave_noise.seed = terrain_seed
-	river_noise.seed = terrain_seed
+func world_to_chunk(pos : Vector3i) -> Vector3i:
+	return Vector3i(
+		pos.x % chunk_size.x,
+		pos.y,
+		pos.z % chunk_size.z,
+	)
 
+# World transforms
+func get_chunk_coordinate(pos : Vector3i) -> Vector2i:
+	return Vector2i(
+		snappedi(pos.x, chunk_size.x),
+		snappedi(pos.z, chunk_size.z),
+	)
+
+
+
+### World manager functions
+func chunk_exists(chunk_pos : Vector2i) -> bool:
+	return chunk_pos in chunks
+
+func block_exists(pos : Vector3i) -> bool:
+	return get_chunk_coordinate(pos) in chunks
+
+func get_chunk(chunk_pos : Vector2i) -> PackedInt32Array:
+	return chunks[chunk_pos]
+
+func get_block_from_world(pos : Vector3i) -> Dictionary[String, int]:
+	var chunk_pos = get_chunk_coordinate(pos)
+	if not chunk_exists(chunk_pos): return _get_error_block()
+
+	return get_block_by_pos(chunks[chunk_pos], world_to_chunk(pos))
+
+func set_block_in_world(pos : Vector3i, block_type : Blocks.BLOCK_TYPES) -> bool:
+	var chunk_pos = get_chunk_coordinate(pos)
+	if not chunk_exists(chunk_pos): return false
+
+	set_block_type(chunks[chunk_pos], world_to_chunk(pos), block_type)
+
+	return true
+
+
+
+
+
+
+## Noise manager functions
+func sample_height_at(pos : Vector2) -> int:
+	return round(
+		clamp(remap( # Constrain the noise value between 0 and the specified world height
+			settings.height_noise.get_noise_2dv(pos),
+		-1, 1, settings.terrain_start, settings.terrain_end), settings.terrain_start, settings.terrain_end) 
+	)
+
+func sample_cave_at(pos : Vector3) -> float:
+	return clamp(remap(
+		settings.cave_noise.get_noise_3dv(pos),
+	-1,0, 0,1), 0, 1)
+
+
+
+## Custom feature generators
+func generate_oak_tree(data : PackedInt32Array, pos : Vector3i) -> void:
+	# Tree trunk
+	for y in range(0, 5):
+		set_block_type(data, pos + Vector3i(0, y, 0), Blocks.BLOCK_TYPES.oak_log)
+
+	# Big leaf blob
+	for y in range(3, 5):
+		for x in range(-2, 3):
+			for z in range(-2, 3):
+				if x == 0 and z == 0: continue
+				if abs(x) + abs(z) == 4 and randi_range(0, 3) == 0: continue
+				set_block_type(data, pos + Vector3i(x, y, z), Blocks.BLOCK_TYPES.oak_leaves)
+
+	# Small leaf blob
+	for y in range(5, 7):
+		for x in range(-1, 2):
+			for z in range(-1, 2):
+				if abs(x) + abs(z) == 2 and (randi_range(0, 10) > 1 or y == 6): continue
+				set_block_type(data, pos + Vector3i(x, y, z), Blocks.BLOCK_TYPES.oak_leaves)
+
+
+## Terrain generators
+func generate_terrain():
+	chunks.clear()
+
+	for x in range(5):
+		for z in range(5):
+			# Generate chunks. Maybe around the player dinamically?
+			pass
+
+
+## Chunk generators
+func generate_chunk(chunk_pos : Vector2i, force : bool = false) -> PackedInt32Array:
+	if chunk_exists(chunk_pos) and not force: return get_chunk(chunk_pos)
+	
 	var data : PackedInt32Array = []
 	data.resize(chunk_size.x * chunk_size.y * chunk_size.z)
 
+	var chunk_offset = chunk_pos * Vector2i(chunk_size.x, chunk_size.z)
+
 	for x in range(0, chunk_size.x):
 		for z in range(0, chunk_size.z):
-			var current_height = get_height_at(chunk_offset + Vector2i(x, z))
+			var current_height = sample_height_at(chunk_offset + Vector2i(x, z))
 
 			for y in range(0, chunk_size.y):
 				var block_type : Blocks.BLOCK_TYPES = Blocks.BLOCK_TYPES.air
 
 				if y <= current_height: block_type = Blocks.BLOCK_TYPES.stone
-				if y < deepslate_level + randi_range(-5, 5): block_type = Blocks.BLOCK_TYPES.deepslate
+				if y < settings.deepslate_level + randi_range(-2, 2):
+					block_type = Blocks.BLOCK_TYPES.deepslate
 
 				if y == 0: block_type = Blocks.BLOCK_TYPES.bedrock
 
-				set_block(data, Vector3i(x,y,z), block_type)
+				set_block_type(data, Vector3i(x,y,z), block_type)
 
 	return data
 
+"""
 func generate_chunk_o(chunk_offset : Vector2i) -> Array:
 	if terrain_seed == -1: terrain_seed = randi()
 	height_noise.seed = terrain_seed
@@ -419,3 +419,4 @@ func generate_chunk_o(chunk_offset : Vector2i) -> Array:
 						replace_block(data, block_pos, Blocks.BLOCK_TYPES.iron_ore, [Blocks.BLOCK_TYPES.stone])
 
 	return data
+"""

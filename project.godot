@@ -20,6 +20,8 @@ config/icon="uid://hqdl5mjkujte"
 Blocks="*res://scripts/blocks.gd"
 Global="*res://scripts/global.gd"
 ThreadManager="*res://scripts/thread_manager.gd"
+PositionalNoiseGenerator="*res://scripts/positional_noise_generator.gd"
+TerrainGenerator="*res://scripts/terrain_generator.gd"
 
 [display]
 

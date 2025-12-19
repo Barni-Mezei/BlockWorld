@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="TerrainGenerator" load_steps=12 format=3 uid="uid://c0l6hgn6r2cbe"]
+[gd_resource type="Resource" script_class="TerrainGeneratorSettings" load_steps=12 format=3 uid="uid://c0l6hgn6r2cbe"]
 
 [ext_resource type="FastNoiseLite" uid="uid://dw7q5c6ketkfm" path="res://materials/terrain/default_cave_noise.tres" id="1_hfsqa"]
-[ext_resource type="Script" uid="uid://ctps2s1yb7bhe" path="res://scripts/terrain_generator.gd" id="1_icmlg"]
+[ext_resource type="Script" uid="uid://ctps2s1yb7bhe" path="res://scripts/terrain_generator_settings.gd" id="1_icmlg"]
 [ext_resource type="FastNoiseLite" uid="uid://bj8ytx4ptobrn" path="res://materials/terrain/default_height_noise.tres" id="2_x07q1"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_kpl7f"]
@@ -39,12 +39,12 @@ height_noise = ExtResource("2_x07q1")
 biome_noise = SubResource("FastNoiseLite_kpl7f")
 cave_noise = ExtResource("1_hfsqa")
 river_noise = SubResource("FastNoiseLite_axnfj")
+enable_mud = false
+tree_frequency = 500
 iron_ore_distribution = SubResource("Curve_xqm8g")
 coal_ore_distribution = SubResource("Curve_l86fn")
 diamond_ore_distribution = SubResource("Curve_0abrf")
 underground_patch_size = SubResource("Curve_23udb")
 noise_cave_size_stone = SubResource("Curve_hfsqa")
 noise_cave_size_deepslate = SubResource("Curve_x07q1")
-tree_frequency = 500
-enable_mud = false
 metadata/_custom_type_script = "uid://ctps2s1yb7bhe"
