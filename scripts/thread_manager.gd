@@ -2,7 +2,7 @@ extends Node
 
 signal thread_available
 
-const max_threads : int = 6
+const max_threads : int = 4
 
 var used_thread_count : int = 0
 var threads : Array[Dictionary]

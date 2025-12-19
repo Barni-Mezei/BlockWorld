@@ -430,6 +430,16 @@ var BLOCK_GROUPS : Dictionary[String, Array] = {
 	] as Array[BLOCK_TYPES],
 }
 
+"""
+
+Int 32:
+- block id [10]:   1024
+- light level [4]: 16
+- biome id [4]:    16
+- other [4]:       16
+
+"""
+
 func get_block_group(group_name : String = "all") -> Array[BLOCK_TYPES]:
 	if group_name in BLOCK_GROUPS: return BLOCK_GROUPS[group_name]
 	return BLOCK_GROUPS["none"]

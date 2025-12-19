@@ -117,7 +117,7 @@ func _physics_process(delta: float) -> void:
 	self.rotation.y = deg_to_rad(_yaw)
 	_camera.rotation.x = deg_to_rad(_pitch)
 
-
+	Global.player_pos = position
 
 	move_and_slide()
 

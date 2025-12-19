@@ -39,14 +39,60 @@ class_name TerrainGenerator
 @export var enable_mud : bool = true
 @export var enable_water : bool = false
 
+var packed_block_data_structure : Dictionary = {
+	"block_type": 10,
+	"light_level": 4,
+	"biome": 4,
+}
+
+var packed_block_data : Dictionary = {
+	"masks": {},
+	"offsets": {},
+}
+
 var terrain_seed : int = -1
 var world_size : Vector2i
 
 func _init() -> void:
 	randomize()
 
+	# Generate block data bitmasks
+	var offset = 0
+	for data_key in packed_block_data_structure:
+		var length = packed_block_data_structure[data_key]
+
+		var mask = int(pow(2, length) - 1)
+
+		packed_block_data["masks"][data_key] = mask
+		packed_block_data["offsets"][data_key] = offset
+
+		offset += length
+
+	prints(get_block_indexv(Vector3(0,0,0), 2,2))
+	get_block_by_index([], 8)
+
+	var block_data : Dictionary[String, int] = {
+		"block_type": 1024,
+		"light_level": 16,
+		"biome": 0,
+	}
+
+	var packed = pack_block_data(block_data)
+
+	prints(String.num_uint64(packed, 2).lpad(32, "0"))
+
+	var unpacked = unpack_block_data(packed)
+	prints(unpacked)
+
+	packed = set_packed_block_data(packed, "light_level", 2)
+
+	unpacked = unpack_block_data(packed)
+	prints(unpacked)
+
+
+
 # Utils
-static func get_block(data : Array, pos : Vector3) -> Blocks.BLOCK_TYPES:
+static func get_block_o(data : Array, pos : Vector3) -> Blocks.BLOCK_TYPES:
 	var x = int(pos.x)
 	var y = int(pos.y)
 	var z = int(pos.z)
@@ -57,6 +103,47 @@ static func get_block(data : Array, pos : Vector3) -> Blocks.BLOCK_TYPES:
 				return data[x][z][y]
 
 	return Blocks.BLOCK_TYPES.air
+
+func unpack_block_data(block_data : int) -> Dictionary[String, int]:
+	var block_data_out : Dictionary[String, int] = {}
+
+	for key in packed_block_data_structure:
+		block_data_out[key] = (block_data >> packed_block_data["offsets"][key]) & packed_block_data["masks"][key]
+
+	return block_data_out
+
+func set_packed_block_data(block_data : int, key : String, value : int) -> int:
+	var mask = packed_block_data["masks"][key] << packed_block_data["offsets"][key]
+
+	var erased_block_data = block_data & ~mask
+
+	var modified_part = (value << packed_block_data["offsets"][key]) & mask
+
+	return erased_block_data | modified_part
+
+func pack_block_data(block_data : Dictionary[String, int]) -> int:
+	var block_data_out : int = 0
+
+	for key in packed_block_data_structure:
+		block_data_out |= (block_data[key] & packed_block_data["masks"][key]) << packed_block_data["offsets"][key]
+
+	return block_data_out
+
+func get_block_by_index(data : PackedInt32Array, index : int) -> int:
+	if index < 0 or index > data.size(): return Blocks.BLOCK_TYPES.air
+	
+	return data[index]
+
+func get_block(data : PackedInt32Array, pos : Vector3i) -> Dictionary[String, int]:
+	var index = get_block_indexv(pos)
+	if index < 0 or index > data.size():
+		return {
+			"block_type": Blocks.BLOCK_TYPES.air,
+			"light_level": 0,
+			"biome": 0,
+		}
+
+	return unpack_block_data(data[index])
 
 func check_block(data : Array, pos : Vector3, allowed_block_types : Array[Blocks.BLOCK_TYPES]) -> bool:
 	var x = int(pos.x)
@@ -70,7 +157,7 @@ func check_block(data : Array, pos : Vector3, allowed_block_types : Array[Blocks
 
 	return false
 
-func set_block(data : Array, pos : Vector3, block : Blocks.BLOCK_TYPES) -> void:
+func set_block_o(data : Array, pos : Vector3, block : Blocks.BLOCK_TYPES) -> void:
 	var x = int(pos.x)
 	var y = int(pos.y)
 	var z = int(pos.z)
@@ -79,6 +166,14 @@ func set_block(data : Array, pos : Vector3, block : Blocks.BLOCK_TYPES) -> void:
 		if z >= 0 and z < len(data[x]):
 			if y >= 0 and y < len(data[x][z]):
 				data[x][z][y] = block
+
+
+func set_block(data : PackedInt32Array, pos : Vector3i, block_type : Blocks.BLOCK_TYPES) -> void:
+	var index : int = get_block_indexv(pos)
+	if index < 0 or index > data.size(): return
+
+	data[index] = set_packed_block_data(data[index], "block_type", block_type)
+
 
 func replace_block(data : Array, pos : Vector3, block : Blocks.BLOCK_TYPES, replaced_blocks : Array[Blocks.BLOCK_TYPES]) -> void:
 	var x = int(pos.x)
@@ -136,8 +231,47 @@ func get_cave_at(pos : Vector3) -> float:
 		cave_noise.get_noise_3dv(pos),
 	-1,0, 0,1), 0, 1)
 
+func get_block_index(x : int, y : int, z : int, width : int = chunk_size.x, depth : int = chunk_size.z) -> int:
+	return y * (width * depth) + z * width + x
+
+func get_block_indexv(pos : Vector3i, width : int = chunk_size.x, depth : int = chunk_size.z) -> int:
+	return pos.y * (width * depth) + pos.z * width + pos.x
+
+func get_block_pos(index : int, width : int = chunk_size.x, depth : int = chunk_size.z) -> Vector3i:
+	@warning_ignore("integer_division")
+	return Vector3i(
+		index % width,
+		index / (width * depth),
+		(index / width) % depth
+	)
+
 # Chunk generators
-func generate_chunk(chunk_offset : Vector2i) -> Array:
+func generate_chunk(chunk_offset : Vector2i) -> PackedInt32Array:
+	if terrain_seed == -1: terrain_seed = randi()
+	height_noise.seed = terrain_seed
+	biome_noise.seed = terrain_seed
+	cave_noise.seed = terrain_seed
+	river_noise.seed = terrain_seed
+
+	var data : PackedInt32Array = []
+	data.resize(chunk_size.x * chunk_size.y * chunk_size.z)
+
+	for x in range(0, chunk_size.x):
+		for z in range(0, chunk_size.z):
+			var current_height = get_height_at(chunk_offset + Vector2i(x, z))
+
+			for y in range(0, chunk_size.y):
+				var block_type : Blocks.BLOCK_TYPES = Blocks.BLOCK_TYPES.air
+
+				if y <= current_height: block_type = Blocks.BLOCK_TYPES.stone
+
+				if y == 0: block_type = Blocks.BLOCK_TYPES.bedrock
+
+				set_block(data, Vector3i(x,y,z), block_type)
+
+	return data
+
+func generate_chunk_o(chunk_offset : Vector2i) -> Array:
 	if terrain_seed == -1: terrain_seed = randi()
 	height_noise.seed = terrain_seed
 	biome_noise.seed = terrain_seed
