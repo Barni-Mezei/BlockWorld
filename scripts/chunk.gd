@@ -83,12 +83,10 @@ func __set_collision_shape(shape : ConcavePolygonShape3D):
 
 
 func generate_terrain() -> void:
-	#print("\t- Thread %d START" % thread_index)
 	voxel_data = TERRAIN_GENERATOR.generate_chunk(CHUNK_OFFSET)
-	#await get_tree().create_timer(randf_range(0.0, 0.01)).timeout
+
 	var mesh_data = _build_mesh()
 	__set_mesh.call_deferred(mesh_data["mesh"])
-	#_terrain_mesh.mesh = mesh_data["mesh"]
 
 	__set_surface_material.call_deferred(mesh_data["surfaces"])
 
@@ -96,13 +94,14 @@ func generate_terrain() -> void:
 	call_deferred_thread_group("__set_collision_shape", collider)
 
 # Returns true if the face should be drawn
+@warning_ignore("unused_parameter")
 func _check_cull(pos : Vector3, normal: Vector3) -> bool:
 	#if pos.x == 0 and normal.x == -1: return false
 	#if pos.x == TERRAIN_GENERATOR.chunk_size.x-1 and normal.x == 1: return false
 	#if pos.z == 0 and normal.z == -1: return false
 	#if pos.z == TERRAIN_GENERATOR.chunk_size.z-1 and normal.z == 1: return false
-	#return TerrainGenerator.get_block(voxel_data, pos + normal) in Blocks.get_block_group("transparent")
-	return true
+	return TERRAIN_GENERATOR.get_block(voxel_data, pos + normal)["block_type"] in Blocks.get_block_group("transparent")
+	#return true
 
 func _create_face(
 		mesh_data : Dictionary, # vertex, uv, normal
@@ -322,17 +321,33 @@ func _build_mesh() -> Dictionary:
 			"normal": [],
 		}
 
-	for x in range(TERRAIN_GENERATOR.chunk_size.x):
-		for y in range(TERRAIN_GENERATOR.chunk_size.y):
-			for z in range(TERRAIN_GENERATOR.chunk_size.z):
-				var index = TERRAIN_GENERATOR.get_block_index(x, y, z)
-				var block_data = TERRAIN_GENERATOR.unpack_block_data(voxel_data[index])
-				var block_type = block_data["block_type"]
-				if Blocks.is_air(block_type): continue
+	var pos : Vector3i
+	var packed_block_data : int
+	var block_data : Dictionary
+	var block_type : Blocks.BLOCK_TYPES
 
-				block_config["top_rotation"] = 0
+	for i in range(len(voxel_data)):
+		pos = TERRAIN_GENERATOR.get_block_pos(i)
+		packed_block_data = TERRAIN_GENERATOR.get_block_by_index(voxel_data, i)
+		block_data = TERRAIN_GENERATOR.unpack_block_data(packed_block_data)
+		block_type = block_data["block_type"]
+		if Blocks.is_air(block_type): continue
 
-				_create_block(mesh_surface_data, collider_mesh_data, Vector3(x, y, z) * BLOCK_SIZE, BLOCK_SIZE, block_type)
+		block_config["top_rotation"] = 0
+
+		_create_block(mesh_surface_data, collider_mesh_data, Vector3(pos) * BLOCK_SIZE, BLOCK_SIZE, block_type)
+
+	#for x in range(TERRAIN_GENERATOR.chunk_size.x):
+		#for y in range(TERRAIN_GENERATOR.chunk_size.y):
+			##prints(y)
+			#for z in range(TERRAIN_GENERATOR.chunk_size.z):
+				#var block_data = TERRAIN_GENERATOR.get_block_by_index(voxel_data, Vector3i(x, y, z))
+				#var block_type = block_data["block_type"]
+				#if Blocks.is_air(block_type): continue
+#
+				#block_config["top_rotation"] = 0
+#
+				#_create_block(mesh_surface_data, collider_mesh_data, Vector3(x, y, z) * BLOCK_SIZE, BLOCK_SIZE, block_type)
 
 	# Generate mesh with surfaces
 	vertex_count = 0

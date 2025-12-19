@@ -68,8 +68,8 @@ func _init() -> void:
 
 		offset += length
 
-	prints(get_block_indexv(Vector3(0,0,0), 2,2))
-	get_block_by_index([], 8)
+	#prints(get_block_indexv(Vector3(0,0,0), 2,2))
+	#get_block_by_index([], 8)
 
 	var block_data : Dictionary[String, int] = {
 		"block_type": 1024,
@@ -79,17 +79,15 @@ func _init() -> void:
 
 	var packed = pack_block_data(block_data)
 
-	prints(String.num_uint64(packed, 2).lpad(32, "0"))
+	#prints(String.num_uint64(packed, 2).lpad(32, "0"))
 
 	var unpacked = unpack_block_data(packed)
-	prints(unpacked)
+	#prints(unpacked)
 
 	packed = set_packed_block_data(packed, "light_level", 2)
 
 	unpacked = unpack_block_data(packed)
-	prints(unpacked)
-
-
+	#prints(unpacked)
 
 # Utils
 static func get_block_o(data : Array, pos : Vector3) -> Blocks.BLOCK_TYPES:

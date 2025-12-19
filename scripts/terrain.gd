@@ -95,7 +95,7 @@ World generation multithreaded:
 
 @export var TERRAIN_GENERATOR : TerrainGenerator
 @export var WORLD_SIZE : Vector2i = Vector2i(32, 32)
-@export var CHUNK_SIZE : Vector2i = Vector2i(32, 32)
+@export var CHUNK_SIZE : Vector2i = Vector2i(8, 8)
 @export var BLOCK_SIZE : Vector3 = Vector3(1, 1, 1)
 
 @export var CHUNK_SCENE : PackedScene

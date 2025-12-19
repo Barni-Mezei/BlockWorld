@@ -20,7 +20,7 @@ func _ready() -> void:
 		_world_environment_node.camera_attributes = null
 
 	# Spawn player at the surface
-	_player.position.y = _terrain.TERRAIN_GENERATOR.chunk_size.y * _terrain.BLOCK_SIZE.y
+	_player.position.y = _terrain.TERRAIN_GENERATOR.chunk_size.y * _terrain.BLOCK_SIZE.y + 1
 	_player.freeze()
 
 	_terrain.chunk_finished.connect(_chunk_finished)
