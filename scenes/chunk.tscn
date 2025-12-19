@@ -1,0 +1,31 @@
+[gd_scene load_steps=6 format=3 uid="uid://v406vymbf0e"]
+
+[ext_resource type="Script" uid="uid://bfj72vj0vykja" path="res://scripts/chunk.gd" id="1_jas4a"]
+[ext_resource type="Material" uid="uid://dtig3dwx4pmkv" path="res://materials/blocks_material.tres" id="2_71206"]
+[ext_resource type="Material" uid="uid://co7o2r6jb77am" path="res://materials/grass_material.tres" id="3_igplp"]
+[ext_resource type="Material" uid="uid://c0vl28s321d5m" path="res://materials/foliage_material.tres" id="4_slc7p"]
+[ext_resource type="Material" uid="uid://dcorcad26ixno" path="res://materials/glowing_material.tres" id="5_kxdf2"]
+
+[node name="Chunk" type="Node3D"]
+script = ExtResource("1_jas4a")
+DEFAULT_MATERIAL = ExtResource("2_71206")
+GRASS_MATERIAL = ExtResource("3_igplp")
+FOLIAGE_MATERIAL = ExtResource("4_slc7p")
+GLOWING_MATERIAL = ExtResource("5_kxdf2")
+
+[node name="TerrainMesh" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+
+[node name="TerrainCollider" type="StaticBody3D" parent="."]
+collision_layer = 8
+collision_mask = 0
+
+[node name="TerrainCollisionShape" type="CollisionShape3D" parent="TerrainCollider"]
+unique_name_in_owner = true
+
+[node name="InteractionCollider" type="StaticBody3D" parent="."]
+collision_layer = 16
+collision_mask = 0
+
+[node name="InteractionCollisionShape" type="CollisionShape3D" parent="InteractionCollider"]
+unique_name_in_owner = true

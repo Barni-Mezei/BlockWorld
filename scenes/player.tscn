@@ -1,0 +1,111 @@
+[gd_scene load_steps=14 format=3 uid="uid://ckh5fiv5vobg6"]
+
+[ext_resource type="Script" uid="uid://gq52eaxrwv1y" path="res://scripts/player.gd" id="1_4flbx"]
+[ext_resource type="Shader" uid="uid://bmud6famjh35e" path="res://materials/pixelate.gdshader" id="2_g2els"]
+[ext_resource type="PackedScene" uid="uid://ci1j7vdu45gfo" path="res://scenes/light_orb.tscn" id="2_qhqgy"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_onrkg"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_i3pqv"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_hqtel"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="BoxMesh" id="BoxMesh_3vyb7"]
+size = Vector3(0.1, 0.1, 0.25)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qhqgy"]
+render_priority = 0
+shader = ExtResource("2_g2els")
+shader_parameter/pixel_count = 0.999999977648
+shader_parameter/range = 5.0
+shader_parameter/gamma = 1.0
+shader_parameter/a = 1.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_dqkch"]
+material = SubResource("ShaderMaterial_qhqgy")
+flip_faces = true
+size = Vector2(2, 2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qhqgy"]
+transparency = 1
+no_depth_test = true
+shading_mode = 2
+disable_fog = true
+disable_specular_occlusion = true
+albedo_color = Color(1, 1, 1, 0.1254902)
+
+[sub_resource type="BoxMesh" id="BoxMesh_dqkch"]
+material = SubResource("StandardMaterial3D_qhqgy")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dqkch"]
+albedo_color = Color(1, 0, 0, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_qlg0r"]
+material = SubResource("StandardMaterial3D_dqkch")
+radius = 0.031
+height = 0.063
+radial_segments = 4
+rings = 1
+
+[node name="Player" type="CharacterBody3D"]
+collision_mask = 26
+script = ExtResource("1_4flbx")
+ORB_SCENE = ExtResource("2_qhqgy")
+
+[node name="Collider" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_onrkg")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+material_override = SubResource("StandardMaterial3D_i3pqv")
+mesh = SubResource("CapsuleMesh_hqtel")
+
+[node name="DirectionIndicator" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
+layers = 2
+material_override = SubResource("StandardMaterial3D_i3pqv")
+mesh = SubResource("BoxMesh_3vyb7")
+skeleton = NodePath("../Body")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+keep_aspect = 0
+cull_mask = 1047553
+fov = 90.0
+
+[node name="Flashlight" type="SpotLight3D" parent="Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+visible = false
+light_color = Color(1, 0.9766667, 0.9, 1)
+light_energy = 5.0
+spot_range = 16.0
+
+[node name="ScreenShader" type="MeshInstance3D" parent="Camera3D"]
+visible = false
+cast_shadow = 0
+extra_cull_margin = 16384.0
+mesh = SubResource("QuadMesh_dqkch")
+
+[node name="Spawner" type="Node3D" parent="Camera3D"]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
+
+[node name="VisionRay" type="RayCast3D" parent="Camera3D"]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0)
+target_position = Vector3(0, 4, 0)
+collision_mask = 8
+debug_shape_custom_color = Color(0.97, 0, 0, 1)
+debug_shape_thickness = 4
+
+[node name="SelectedBlock" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+mesh = SubResource("BoxMesh_dqkch")
+
+[node name="Point" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("SphereMesh_qlg0r")

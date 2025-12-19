@@ -1,0 +1,68 @@
+[gd_scene load_steps=8 format=3 uid="uid://dxufvvlicnsx6"]
+
+[ext_resource type="Script" uid="uid://c04vxog7ssp8b" path="res://scripts/main.gd" id="1_jyhfs"]
+[ext_resource type="PackedScene" uid="uid://ckh5fiv5vobg6" path="res://scenes/player.tscn" id="2_sugp2"]
+[ext_resource type="Environment" uid="uid://c1acpb3fwjla5" path="res://materials/world_env.tres" id="2_tefeu"]
+[ext_resource type="CameraAttributesPractical" uid="uid://bf8yblbwqovjo" path="res://materials/camera_attributes.tres" id="3_o6xl0"]
+[ext_resource type="PackedScene" uid="uid://culku21hfsgxd" path="res://scenes/ui.tscn" id="3_sugp2"]
+[ext_resource type="PackedScene" uid="uid://baorgc5sxu2" path="res://scenes/terrain.tscn" id="3_tbgi4"]
+[ext_resource type="Script" uid="uid://cn0iq5gaj46hx" path="res://scripts/orbit_camera.gd" id="5_o6xl0"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_jyhfs")
+enable = true
+world_env = ExtResource("2_tefeu")
+camera_attributes = ExtResource("3_o6xl0")
+
+[node name="UI" parent="." instance=ExtResource("3_sugp2")]
+unique_name_in_owner = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+unique_name_in_owner = true
+
+[node name="Player" parent="." instance=ExtResource("2_sugp2")]
+unique_name_in_owner = true
+transform = Transform3D(-0.7071068, 0, -0.7071066, 0, 1, 0, 0.7071066, 0, -0.7071068, 0, 0, 0)
+
+[node name="Terrain" parent="." instance=ExtResource("3_tbgi4")]
+unique_name_in_owner = true
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.6996632, 0.35723633, -0.61875147, 0, 0.8660253, 0.49999994, 0.71447265, 0.3498316, -0.6059261, 0, 0, 0)
+light_volumetric_fog_energy = 2.0
+shadow_enabled = true
+shadow_bias = 0.01
+directional_shadow_split_1 = 0.05
+directional_shadow_split_2 = 0.15
+directional_shadow_split_3 = 0.3
+directional_shadow_blend_splits = true
+directional_shadow_fade_start = 1.0
+directional_shadow_max_distance = 128.0
+directional_shadow_pancake_size = 7.2
+
+[node name="OrbitCameraContainer" type="SubViewportContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+mouse_behavior_recursive = 1
+stretch = true
+mouse_target = true
+
+[node name="SubViewport" type="SubViewport" parent="OrbitCameraContainer"]
+handle_input_locally = false
+size = Vector2i(1920, 1080)
+render_target_update_mode = 0
+
+[node name="OrbitOrigin" type="Node3D" parent="OrbitCameraContainer/SubViewport"]
+script = ExtResource("5_o6xl0")
+
+[node name="Camera3D" type="Camera3D" parent="OrbitCameraContainer/SubViewport/OrbitOrigin"]
+transform = Transform3D(1, 0, 0, 0, 0.9396926, 0.34202012, 0, -0.34202012, 0.9396926, -0.5, 92, 150)
+size = 128.0
+
+[node name="Entity" type="Node" parent="."]

@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://cvij1v1nn6do4"]
+
+[ext_resource type="Shader" uid="uid://bgp82yocw6nbo" path="res://materials/light.gdshader" id="1_kchw7"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_kchw7")
+shader_parameter/light_resolution = 16.0

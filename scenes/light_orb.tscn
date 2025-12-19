@@ -1,0 +1,39 @@
+[gd_scene load_steps=5 format=3 uid="uid://ci1j7vdu45gfo"]
+
+[ext_resource type="Script" uid="uid://k4xuijctclim" path="res://scripts/light_orb.gd" id="1_m7w4g"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_1gbsm"]
+radius = 0.25
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m7w4g"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.9166666, 0, 0.41568628)
+
+[sub_resource type="SphereMesh" id="SphereMesh_q02b5"]
+material = SubResource("StandardMaterial3D_m7w4g")
+radius = 0.25
+height = 0.5
+radial_segments = 16
+rings = 8
+
+[node name="LightOrb" type="RigidBody3D"]
+collision_layer = 0
+collision_mask = 8
+mass = 0.1
+script = ExtResource("1_m7w4g")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+light_color = Color(0.99999994, 0.96230656, 0.6200393, 1)
+light_volumetric_fog_energy = 5.0
+light_size = 0.25
+shadow_enabled = true
+shadow_blur = 0.0
+omni_range = 10.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_1gbsm")
+debug_color = Color(0.7019608, 0.6431373, 0, 0.41960785)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_q02b5")

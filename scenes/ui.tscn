@@ -1,0 +1,244 @@
+[gd_scene load_steps=18 format=3 uid="uid://culku21hfsgxd"]
+
+[ext_resource type="Theme" uid="uid://dytpmsvukbpl1" path="res://ui/main_theme.tres" id="1_6rmj2"]
+[ext_resource type="Script" uid="uid://dshnfaluhjw6w" path="res://scripts/ui.gd" id="1_vdcm2"]
+[ext_resource type="Shader" uid="uid://3jd523rgtjav" path="res://materials/invert.gdshader" id="1_x4jx1"]
+[ext_resource type="Texture2D" uid="uid://biyftqn8mfgbl" path="res://textures/hud/crosshair.png" id="2_yev5y"]
+[ext_resource type="Texture2D" uid="uid://dlwgty4nxyue4" path="res://textures/hud/heart_bar_background.png" id="3_cgfq5"]
+[ext_resource type="Texture2D" uid="uid://dd0adqn5xijd7" path="res://textures/hud/heart_bar.png" id="4_7dvkv"]
+[ext_resource type="Texture2D" uid="uid://bl5bs81y3e2rj" path="res://textures/hud/food_bar_background.png" id="5_vdcm2"]
+[ext_resource type="Texture2D" uid="uid://bfwgnlwpn0ysf" path="res://textures/hud/food_bar.png" id="6_6rmj2"]
+[ext_resource type="Texture2D" uid="uid://7yl03ojjvpji" path="res://textures/hud/experience_bar_background.png" id="7_vsj0x"]
+[ext_resource type="Texture2D" uid="uid://c5gpkx6h2phlr" path="res://textures/hud/experience_bar_progress.png" id="8_qsv74"]
+[ext_resource type="Texture2D" uid="uid://p7sm6getwryq" path="res://textures/hud/hotbar.png" id="9_h1mc3"]
+[ext_resource type="Texture2D" uid="uid://dpe1j865x3v4t" path="res://textures/hud/hotbar_selection.png" id="11_6rmj2"]
+[ext_resource type="Script" uid="uid://bvuy060ypgvbn" path="res://scripts/debug_menu.gd" id="13_vsj0x"]
+[ext_resource type="PackedScene" uid="uid://dmkcneghnsuxo" path="res://scenes/value_label.tscn" id="14_qsv74"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gdt2y"]
+shader = ExtResource("1_x4jx1")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cof4p"]
+bg_color = Color(0.13333334, 0.1254902, 0.20392157, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_f7tlh"]
+font_size = 12
+
+[node name="UI" type="Control"]
+layout_mode = 3
+anchor_right = 0.333
+anchor_bottom = 0.333
+offset_right = 0.64001465
+offset_bottom = 0.35998535
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(3, 3)
+mouse_filter = 2
+theme = ExtResource("1_6rmj2")
+script = ExtResource("1_vdcm2")
+
+[node name="Hud" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HudCenter" type="CenterContainer" parent="Hud"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Crosshair" type="TextureRect" parent="Hud/HudCenter"]
+texture_filter = 1
+material = SubResource("ShaderMaterial_gdt2y")
+layout_mode = 2
+texture = ExtResource("2_yev5y")
+
+[node name="HudBottom" type="HBoxContainer" parent="Hud"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -44.0
+grow_horizontal = 2
+grow_vertical = 0
+alignment = 1
+
+[node name="Hud" type="VBoxContainer" parent="Hud/HudBottom"]
+layout_mode = 2
+
+[node name="Bars" type="HBoxContainer" parent="Hud/HudBottom/Hud"]
+layout_mode = 2
+
+[node name="HealthBar" type="TextureProgressBar" parent="Hud/HudBottom/Hud/Bars"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 20.0
+value = 20.0
+texture_under = ExtResource("3_cgfq5")
+texture_progress = ExtResource("4_7dvkv")
+
+[node name="Gap" type="MarginContainer" parent="Hud/HudBottom/Hud/Bars"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FoodBar" type="TextureProgressBar" parent="Hud/HudBottom/Hud/Bars"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 20.0
+value = 20.0
+texture_under = ExtResource("5_vdcm2")
+texture_progress = ExtResource("6_6rmj2")
+
+[node name="ExperienceBar" type="TextureProgressBar" parent="Hud/HudBottom/Hud"]
+unique_name_in_owner = true
+layout_mode = 2
+texture_under = ExtResource("7_vsj0x")
+texture_progress = ExtResource("8_qsv74")
+
+[node name="HotabarBackground" type="TextureRect" parent="Hud/HudBottom/Hud"]
+layout_mode = 2
+texture = ExtResource("9_h1mc3")
+
+[node name="SelectedSlot" type="TextureRect" parent="Hud/HudBottom/Hud/HotabarBackground"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1.0
+offset_top = -1.0
+offset_right = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("11_6rmj2")
+stretch_mode = 2
+
+[node name="DebugMenu" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("13_vsj0x")
+
+[node name="Margin" type="MarginContainer" parent="DebugMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 1
+theme_override_constants/margin_top = 1
+theme_override_constants/margin_right = 1
+theme_override_constants/margin_bottom = 1
+
+[node name="MainContainer" type="HBoxContainer" parent="DebugMenu/Margin"]
+layout_mode = 2
+
+[node name="LeftSide" type="VBoxContainer" parent="DebugMenu/Margin/MainContainer"]
+layout_mode = 2
+
+[node name="FpsLabel" parent="DebugMenu/Margin/MainContainer/LeftSide" instance=ExtResource("14_qsv74")]
+unique_name_in_owner = true
+layout_mode = 2
+title = "FPS"
+value = "60"
+
+[node name="EntityCount" parent="DebugMenu/Margin/MainContainer/LeftSide" instance=ExtResource("14_qsv74")]
+unique_name_in_owner = true
+layout_mode = 2
+title = "E:"
+
+[node name="Gap" type="MarginContainer" parent="DebugMenu/Margin/MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RightSide" type="VBoxContainer" parent="DebugMenu/Margin/MainContainer"]
+layout_mode = 2
+
+[node name="LoadingScreen" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="LoadingScreen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_cof4p")
+
+[node name="CenterContainer" type="CenterContainer" parent="LoadingScreen/PanelContainer"]
+layout_mode = 2
+
+[node name="MainContainer" type="VBoxContainer" parent="LoadingScreen/PanelContainer/CenterContainer"]
+layout_mode = 2
+
+[node name="LoadingLabel" type="Label" parent="LoadingScreen/PanelContainer/CenterContainer/MainContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "Loading..."
+label_settings = SubResource("LabelSettings_f7tlh")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Image" type="TextureRect" parent="LoadingScreen/PanelContainer/CenterContainer/MainContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LogText" type="Label" parent="LoadingScreen/PanelContainer/CenterContainer/MainContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "Generating chunks..."
+label_settings = SubResource("LabelSettings_f7tlh")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="LoadingScreen"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 1.0
+anchor_right = 0.9
+anchor_bottom = 1.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="ProgressBar" type="ProgressBar" parent="LoadingScreen/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+step = 0.1
+
+[node name="ProgressValue" type="Label" parent="LoadingScreen/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_font_sizes/font_size = 64
+text = "   0/0   "
+label_settings = SubResource("LabelSettings_f7tlh")
+horizontal_alignment = 2
+vertical_alignment = 1

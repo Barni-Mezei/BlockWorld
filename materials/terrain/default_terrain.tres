@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="TerrainGenerator" load_steps=12 format=3 uid="uid://c0l6hgn6r2cbe"]
+
+[ext_resource type="FastNoiseLite" uid="uid://dw7q5c6ketkfm" path="res://materials/terrain/default_cave_noise.tres" id="1_hfsqa"]
+[ext_resource type="Script" uid="uid://ctps2s1yb7bhe" path="res://scripts/terrain_generator.gd" id="1_icmlg"]
+[ext_resource type="FastNoiseLite" uid="uid://bj8ytx4ptobrn" path="res://materials/terrain/default_height_noise.tres" id="2_x07q1"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_kpl7f"]
+
+[sub_resource type="Curve" id="Curve_l86fn"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.3, 0.3), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(0.6, 0.2), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 5
+
+[sub_resource type="Curve" id="Curve_0abrf"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0), 0.0, 0.0, 0, 0, Vector2(0.8, 0.3), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 3.6801257, 0, 1]
+point_count = 4
+
+[sub_resource type="Curve" id="Curve_xqm8g"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.1, 0), 0.0, 0.0, 0, 0, Vector2(0.6, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="Curve" id="Curve_x07q1"]
+_data = [Vector2(0, 0.7), 0.0, 0.0, 0, 0, Vector2(0.7, 0.6), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_hfsqa"]
+_data = [Vector2(0, 0.8), 0.0, 0.0, 0, 0, Vector2(0.2, 0.90000004), 0.0, 0.0, 0, 0, Vector2(1, 0.7), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_axnfj"]
+
+[sub_resource type="Curve" id="Curve_23udb"]
+_limits = [0.0, 5.0, 0.0, 1.0]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.39999, 1.5), 0.0, 0.0, 0, 0, Vector2(0.4, 3.5), 0.0, 0.0, 0, 0, Vector2(0.5, 5), 0.0, 0.0, 0, 0, Vector2(0.8, 3.5), -14.01501, -14.01501, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 6
+
+[resource]
+script = ExtResource("1_icmlg")
+height_noise = ExtResource("2_x07q1")
+biome_noise = SubResource("FastNoiseLite_kpl7f")
+cave_noise = ExtResource("1_hfsqa")
+river_noise = SubResource("FastNoiseLite_axnfj")
+iron_ore_distribution = SubResource("Curve_xqm8g")
+coal_ore_distribution = SubResource("Curve_l86fn")
+diamond_ore_distribution = SubResource("Curve_0abrf")
+underground_patch_size = SubResource("Curve_23udb")
+noise_cave_size_stone = SubResource("Curve_hfsqa")
+noise_cave_size_deepslate = SubResource("Curve_x07q1")
+tree_frequency = 500
+enable_mud = false
+metadata/_custom_type_script = "uid://ctps2s1yb7bhe"

@@ -1,0 +1,15 @@
+[gd_resource type="ShaderMaterial" load_steps=5 format=3 uid="uid://c0vl28s321d5m"]
+
+[ext_resource type="Shader" uid="uid://b0elptt33np48" path="res://materials/foliage_material.gdshader" id="1_r2xys"]
+[ext_resource type="Texture2D" uid="uid://ccvnmmicymgoe" path="res://textures/atlases/foliage_atlas.png" id="2_kt204"]
+[ext_resource type="Texture2D" uid="uid://dcvi3f1m1522k" path="res://textures/maps/foliage.png" id="3_r2xys"]
+[ext_resource type="Texture2D" uid="uid://dddt3fw26v48t" path="res://textures/atlases/foliage_mask.png" id="4_2028o"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_r2xys")
+shader_parameter/foliage_atlas = ExtResource("2_kt204")
+shader_parameter/foliage_mask = ExtResource("4_2028o")
+shader_parameter/foliage_color_map = ExtResource("3_r2xys")
+shader_parameter/motion_amount = 0.2000000095
+shader_parameter/biome_color_position = Vector2(0.45, 0.7)
