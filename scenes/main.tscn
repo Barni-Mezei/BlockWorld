@@ -42,7 +42,6 @@ directional_shadow_pancake_size = 7.2
 
 [node name="OrbitCameraContainer" type="SubViewportContainer" parent="."]
 unique_name_in_owner = true
-visible = false
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -56,13 +55,14 @@ mouse_target = true
 [node name="SubViewport" type="SubViewport" parent="OrbitCameraContainer"]
 handle_input_locally = false
 size = Vector2i(1920, 1080)
-render_target_update_mode = 0
+render_target_update_mode = 4
 
 [node name="OrbitOrigin" type="Node3D" parent="OrbitCameraContainer/SubViewport"]
 script = ExtResource("5_o6xl0")
 
 [node name="Camera3D" type="Camera3D" parent="OrbitCameraContainer/SubViewport/OrbitOrigin"]
-transform = Transform3D(1, 0, 0, 0, 0.9396926, 0.34202012, 0, -0.34202012, 0.9396926, -0.5, 92, 150)
+transform = Transform3D(1, 0, 0, 0, 0.8949343, 0.44619778, 0, -0.44619778, 0.8949343, -0.5, 92, 150)
+fov = 22.9
 size = 128.0
 
 [node name="Entity" type="Node" parent="."]

@@ -264,6 +264,7 @@ func generate_chunk(chunk_offset : Vector2i) -> PackedInt32Array:
 				var block_type : Blocks.BLOCK_TYPES = Blocks.BLOCK_TYPES.air
 
 				if y <= current_height: block_type = Blocks.BLOCK_TYPES.stone
+				if y < deepslate_level + randi_range(-5, 5): block_type = Blocks.BLOCK_TYPES.deepslate
 
 				if y == 0: block_type = Blocks.BLOCK_TYPES.bedrock
 

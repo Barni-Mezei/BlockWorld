@@ -101,7 +101,8 @@ func _check_cull(pos : Vector3, normal: Vector3) -> bool:
 	#if pos.x == TERRAIN_GENERATOR.chunk_size.x-1 and normal.x == 1: return false
 	#if pos.z == 0 and normal.z == -1: return false
 	#if pos.z == TERRAIN_GENERATOR.chunk_size.z-1 and normal.z == 1: return false
-	return TerrainGenerator.get_block(voxel_data, pos + normal) in Blocks.get_block_group("transparent")
+	#return TerrainGenerator.get_block(voxel_data, pos + normal) in Blocks.get_block_group("transparent")
+	return true
 
 func _create_face(
 		mesh_data : Dictionary, # vertex, uv, normal
@@ -321,10 +322,12 @@ func _build_mesh() -> Dictionary:
 			"normal": [],
 		}
 
-	for x in range(len(voxel_data)):
-		for z in range(len(voxel_data[x])):
-			for y in range(len(voxel_data[x][z])):
-				var block_type = voxel_data[x][z][y]
+	for x in range(TERRAIN_GENERATOR.chunk_size.x):
+		for y in range(TERRAIN_GENERATOR.chunk_size.y):
+			for z in range(TERRAIN_GENERATOR.chunk_size.z):
+				var index = TERRAIN_GENERATOR.get_block_index(x, y, z)
+				var block_data = TERRAIN_GENERATOR.unpack_block_data(voxel_data[index])
+				var block_type = block_data["block_type"]
 				if Blocks.is_air(block_type): continue
 
 				block_config["top_rotation"] = 0
