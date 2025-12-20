@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="TerrainGeneratorSettings" load_steps=12 format=3 uid="uid://c0l6hgn6r2cbe"]
 
 [ext_resource type="FastNoiseLite" uid="uid://dw7q5c6ketkfm" path="res://materials/terrain/default_cave_noise.tres" id="1_hfsqa"]
-[ext_resource type="Script" uid="uid://ctps2s1yb7bhe" path="res://scripts/terrain_generator_settings.gd" id="1_icmlg"]
+[ext_resource type="Script" uid="uid://ctps2s1yb7bhe" path="res://scripts/terrain/terrain_generator_settings.gd" id="1_icmlg"]
 [ext_resource type="FastNoiseLite" uid="uid://bj8ytx4ptobrn" path="res://materials/terrain/default_height_noise.tres" id="2_x07q1"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_kpl7f"]

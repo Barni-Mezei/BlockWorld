@@ -1,8 +1,9 @@
-[gd_scene load_steps=14 format=3 uid="uid://ckh5fiv5vobg6"]
+[gd_scene load_steps=15 format=4 uid="uid://ckh5fiv5vobg6"]
 
 [ext_resource type="Script" uid="uid://gq52eaxrwv1y" path="res://scripts/player.gd" id="1_4flbx"]
 [ext_resource type="Shader" uid="uid://bmud6famjh35e" path="res://materials/pixelate.gdshader" id="2_g2els"]
 [ext_resource type="PackedScene" uid="uid://ci1j7vdu45gfo" path="res://scenes/light_orb.tscn" id="2_qhqgy"]
+[ext_resource type="Script" uid="uid://cajbatdmqfw5f" path="res://scripts/wireframe_cube.gd" id="4_dqkch"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_onrkg"]
 radius = 0.4
@@ -13,9 +14,6 @@ height = 1.8
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_hqtel"]
 radius = 0.4
 height = 1.8
-
-[sub_resource type="BoxMesh" id="BoxMesh_3vyb7"]
-size = Vector3(0.1, 0.1, 0.25)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_qhqgy"]
 render_priority = 0
@@ -30,16 +28,29 @@ material = SubResource("ShaderMaterial_qhqgy")
 flip_faces = true
 size = Vector2(2, 2)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qhqgy"]
-transparency = 1
-no_depth_test = true
-shading_mode = 2
-disable_fog = true
-disable_specular_occlusion = true
-albedo_color = Color(1, 1, 1, 0.1254902)
+[sub_resource type="BoxMesh" id="BoxMesh_3vyb7"]
+size = Vector3(0.1, 0.1, 0.5)
 
-[sub_resource type="BoxMesh" id="BoxMesh_dqkch"]
-material = SubResource("StandardMaterial3D_qhqgy")
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qlg0r"]
+cull_mode = 2
+shading_mode = 0
+vertex_color_use_as_albedo = true
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_tuyoq"]
+_surfaces = [{
+"aabb": AABB(0, 0, 0, 1, 1, 1),
+"attribute_data": PackedByteArray("/wAA/wAA//8AAP//gID//4CA/////wD///8A//8AAP8A/wD/AP///wD///8AAAD/AAAA//8A////AP//AP8A//8AAP8A/wD/AAD//wD//////wD//wD//4CA//8AAAD/"),
+"format": 34359738383,
+"material": SubResource("StandardMaterial3D_qlg0r"),
+"name": "Primary surface",
+"primitive": 1,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 24,
+"vertex_data": PackedByteArray("AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIA/AACAPwAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAACAPwAAgD8AAAAAAACAPwAAgD8AAAAAAACAPwAAgD8AAIA/AACAPwAAgD8AAIA/AAAAAAAAgD8AAIA/AAAAAAAAgD8AAIA/AAAAAAAAgD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAACAPwAAAAAAAAAAAACAPwAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAgD8AAIA/AACAPwAAAAAAAIA/AACAPwAAgD8AAIA/qiqqKv8//79U1aoq/3//n1TVqir/f/+fqqpUVf8//5+qqlRV/z//n1RVVFUAAACAVFVUVQAAAICqKqoq/z//v6oqVNX/P/+fVNVU1QAAAIBU1VTVAAAAgKqqqqr/P/+/qqqqqv8//79UVaqq/3//n1RVqqr/f/+fqipU1f8//5+qKqoq/z//v6oqVNX/P/+fVNWqKv9//59U1VTVAAAAgFRVVFUAAACAVFWqqv9//5+qqlRV/z//n6qqqqr/P/+/")
+}]
+script = ExtResource("4_dqkch")
+COLOR = Color(1, 1, 1, 1)
+metadata/_custom_type_script = "uid://cajbatdmqfw5f"
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dqkch"]
 albedo_color = Color(1, 0, 0, 1)
@@ -57,22 +68,18 @@ script = ExtResource("1_4flbx")
 ORB_SCENE = ExtResource("2_qhqgy")
 
 [node name="Collider" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.90000004, 0)
 shape = SubResource("CapsuleShape3D_onrkg")
+metadata/_edit_group_ = true
 
 [node name="Body" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.90000004, 0)
 material_override = SubResource("StandardMaterial3D_i3pqv")
 mesh = SubResource("CapsuleMesh_hqtel")
 
-[node name="DirectionIndicator" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
-layers = 2
-material_override = SubResource("StandardMaterial3D_i3pqv")
-mesh = SubResource("BoxMesh_3vyb7")
-skeleton = NodePath("../Body")
-
 [node name="Camera3D" type="Camera3D" parent="."]
 unique_name_in_owner = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 1.7, 0)
 keep_aspect = 0
 cull_mask = 1047553
 fov = 90.0
@@ -97,15 +104,23 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
 [node name="VisionRay" type="RayCast3D" parent="Camera3D"]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0)
-target_position = Vector3(0, 4, 0)
+target_position = Vector3(0, 5, 0)
 collision_mask = 8
-debug_shape_custom_color = Color(0.97, 0, 0, 1)
+debug_shape_custom_color = Color(0.97, 0, 0, 0.0627451)
 debug_shape_thickness = 4
+
+[node name="DirectionIndicator" type="MeshInstance3D" parent="Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.25)
+layers = 2
+material_override = SubResource("StandardMaterial3D_i3pqv")
+mesh = SubResource("BoxMesh_3vyb7")
+skeleton = NodePath("../../Body")
 
 [node name="SelectedBlock" type="MeshInstance3D" parent="."]
 unique_name_in_owner = true
-mesh = SubResource("BoxMesh_dqkch")
+mesh = SubResource("ArrayMesh_tuyoq")
 
 [node name="Point" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.90000004, 0)
 visible = false
 mesh = SubResource("SphereMesh_qlg0r")

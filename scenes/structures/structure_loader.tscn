@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://cy5pjy5visn14"]
+
+[ext_resource type="MeshLibrary" uid="uid://p0t5rlwovgy6" path="res://scenes/structures/structures_lib.tres" id="1_7btxc"]
+[ext_resource type="Script" uid="uid://dhqjd3m1dr8jj" path="res://scripts/terrain/structures.gd" id="1_ogu78"]
+
+[node name="StructureLoader" type="Node3D"]
+script = ExtResource("1_ogu78")
+
+[node name="oak_tree" type="GridMap" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0, -0.5)
+visible = false
+mesh_library = ExtResource("1_7btxc")
+cell_size = Vector3(1, 1, 1)
+data = {
+"cells": PackedInt32Array(0, 0, 0, 65536, 0, 0, 131072, 0, 0, 196609, 65535, 1, 196608, 65535, 1, 262143, 0, 1, 196609, 0, 1, 196608, 0, 1, 196609, 1, 1, 196608, 1, 1, 262143, 1, 1, 262143, 65535, 1, 262142, 65535, 1, 262142, 0, 1, 262142, 1, 1, 196609, 65534, 1, 196608, 65534, 1, 262143, 65534, 1, 262142, 65534, 1, 196610, 65534, 1, 196610, 65535, 1, 196610, 0, 1, 196610, 1, 1, 196610, 2, 1, 196609, 2, 1, 196608, 2, 1, 262143, 2, 1, 262142, 2, 1, 327678, 65534, 1, 327679, 65534, 1, 262144, 65534, 1, 262145, 65534, 1, 262146, 65534, 1, 262146, 65535, 1, 262145, 65535, 1, 262144, 65535, 1, 327679, 65535, 1, 327678, 65535, 1, 327678, 0, 1, 327679, 0, 1, 262144, 0, 1, 262145, 0, 1, 262146, 0, 1, 262146, 1, 1, 262145, 1, 1, 262144, 1, 1, 327679, 1, 1, 327678, 1, 1, 327678, 2, 1, 327679, 2, 1, 262144, 2, 1, 262145, 2, 1, 262146, 2, 1, 327680, 65535, 1, 327680, 0, 1, 327680, 1, 1, 327681, 0, 1, 393215, 0, 1, 393217, 0, 1, 393216, 0, 1, 458751, 0, 1, 393216, 65535, 1, 393216, 1, 1)
+}
+metadata/_editor_floor_ = Vector3(0, 0, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]

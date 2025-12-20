@@ -3,14 +3,9 @@
 extends Node3D
 class_name Chunk
 
-signal generation_finished(chunk : Chunk)
-
-@warning_ignore("unused_private_class_variable")
 @onready var _terrain_mesh := %TerrainMesh
-@warning_ignore("unused_private_class_variable")
 @onready var _terrain_collision_shape := %TerrainCollisionShape
 
-@export var TERRAIN_GENERATOR : TerrainGenerator
 @export var CHUNK_OFFSET : Vector2i
 @export var BLOCK_SIZE : Vector3
 
@@ -21,21 +16,25 @@ signal generation_finished(chunk : Chunk)
 @export var GLOWING_MATERIAL : Material
 
 const ATLAS_SIZE : Vector2 = Vector2(8, 8)
-var BLOCK_MODELS : Dictionary = {
+const BLOCK_MODELS : Dictionary = {
 	"cube": "_create_cube",
 	"cross": "_create_cross",
 	"tall_cross": "_create_tall_cross",
 }
 
-var vertex_count: int = 0
 var BLOCK_MATERIALS : Dictionary = {}
 
+# Configuration for the current block, like top_rotation, or foliage_offset
 var block_config : Dictionary[String, Variant] = {}
-
-var voxel_data : Array
 
 var thread : Thread
 var thread_index : int  = 0
+
+# The voxel data go generate the chunk from
+var voxel_data : PackedInt32Array
+var chunk_offset : Vector2i = Vector2i.ZERO
+
+var vertex_count: int = 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -45,27 +44,42 @@ func _ready() -> void:
 	BLOCK_MATERIALS["foliage"] = FOLIAGE_MATERIAL
 	BLOCK_MATERIALS["glow"] = GLOWING_MATERIAL
 
+	update()
+
+	#prints("\t- Got thread:", thread_index, "T", ThreadManager.used_thread_count, "after", request_count)
+
+func update(ignore_collision : bool = false):
+	SignalBus.chunk_changed.emit(chunk_offset, "building")
+
 	var thread_data : Dictionary = {
 		"thread": null
 	}
 
 	#var request_count = 0
-
+	
+	# Request a thread from the thread pool
 	while thread_data["thread"] == null:
 		#print("Requesting thread...")
 		#request_count += 1
 		thread_data = ThreadManager.get_thread()
-		#await get_tree().create_timer(0.1).timeout
-		await get_tree().process_frame
+		await get_tree().create_timer(0.1).timeout
+		#await get_tree().process_frame
 
+	# Start mesh building on the thread
 	thread_index = thread_data["index"]
 	thread = thread_data["thread"]
-	thread.start(generate_terrain)
+	thread.start(generate_meshes.bind(ignore_collision))
 
-	#prints("\t- Got thread:", thread_index, "T", ThreadManager.used_thread_count, "after", request_count)
+func set_voxel_data(new_voxel_data) -> void:
+	voxel_data = new_voxel_data
 
+func set_chunk_offset(offset : Vector2i) -> void:
+	chunk_offset = offset
+
+
+## Multithreading functions
 func __generation_finished():
-	generation_finished.emit(self)
+	SignalBus.chunk_changed.emit(chunk_offset, "finished")
 
 func __set_mesh(mesh : ArrayMesh):
 	_terrain_mesh.mesh = mesh
@@ -77,31 +91,41 @@ func __set_surface_material(surfaces : Array):
 func __set_collision_shape(shape : ConcavePolygonShape3D):
 	_terrain_collision_shape.shape = shape
 
-	__generation_finished.call_deferred()
+	#__generation_finished.call_deferred()
+	(func (): SignalBus.chunk_changed.emit(chunk_offset, "finished")).call_deferred()
 	ThreadManager.free_thread(thread_index)
 	#print("\t- Thread %d END" % thread_index)
 
+func generate_meshes(ignore_collision : bool = false) -> void:
+	var mesh_data = build_mesh()
+	#__set_mesh.call_deferred(mesh_data["mesh"])
+	(func (): _terrain_mesh.mesh = mesh_data["mesh"]).call_deferred()
 
-func generate_terrain() -> void:
-	voxel_data = TERRAIN_GENERATOR.generate_chunk(CHUNK_OFFSET)
+	# Set surface materials
+	#__set_surface_material.call_deferred(mesh_data["surfaces"])
+	for surface_index in range(len(mesh_data["surfaces"])):
+		(func (): _terrain_mesh.mesh.surface_set_material(surface_index, BLOCK_MATERIALS[mesh_data["surfaces"][surface_index]])).call_deferred()
 
-	var mesh_data = _build_mesh()
-	__set_mesh.call_deferred(mesh_data["mesh"])
+	if ignore_collision:
+		(func (): SignalBus.chunk_changed.emit(chunk_offset, "finished")).call_deferred()
+		ThreadManager.free_thread(thread_index)
+	else:
+		var collider = build_collider(mesh_data["collider_mesh"])
+		call_deferred_thread_group("__set_collision_shape", collider)
 
-	__set_surface_material.call_deferred(mesh_data["surfaces"])
 
-	var collider = _build_collider(mesh_data["collider_mesh"])
-	call_deferred_thread_group("__set_collision_shape", collider)
+## Mesh generator functions
 
 # Returns true if the face should be drawn
 @warning_ignore("unused_parameter")
-func _check_cull(pos : Vector3, normal: Vector3) -> bool:
+func _check_cull(local_block_pos : Vector3, face_normal: Vector3) -> bool:
 	#if pos.x == 0 and normal.x == -1: return false
 	#if pos.x == TERRAIN_GENERATOR.chunk_size.x-1 and normal.x == 1: return false
 	#if pos.z == 0 and normal.z == -1: return false
 	#if pos.z == TERRAIN_GENERATOR.chunk_size.z-1 and normal.z == 1: return false
-	return TERRAIN_GENERATOR.get_block(voxel_data, pos + normal)["block_type"] in Blocks.get_block_group("transparent")
-	#return true
+	var global_block_pos = Vector3(chunk_offset.x, 0, chunk_offset.y)*Vector3(TerrainGenerator.chunk_size) + local_block_pos + face_normal 
+
+	return TerrainGenerator.get_block_from_world(global_block_pos)["block_type"] in Blocks.get_block_group("transparent")
 
 func _create_face(
 		mesh_data : Dictionary, # vertex, uv, normal
@@ -302,11 +326,14 @@ func _create_block(
 	if block_collision != Blocks.BLOCK_COLLISIONS.pass_through:
 		COLLIDER_MESH_DATA[block_collision].append_array(mesh_data["vertex"])
 
+	# Add to interaction mesh
+	COLLIDER_MESH_DATA[Blocks.BLOCK_COLLISIONS.interaction].append_array(mesh_data["vertex"])
+
 	# Merge mesh to the correct material
 	for key in mesh_data:
 		MESH_DATA[block_material][key].append_array(mesh_data[key])
 
-func _build_mesh() -> Dictionary:
+func build_mesh() -> Dictionary:
 	# Create surfaces
 	var mesh_surface_data : Dictionary[String, Dictionary] = {}
 	var collider_mesh_data : Dictionary[Blocks.BLOCK_COLLISIONS, Array] = {
@@ -322,32 +349,21 @@ func _build_mesh() -> Dictionary:
 		}
 
 	var pos : Vector3i
-	var packed_block_data : int
+	#var packed_block_data : int
 	var block_data : Dictionary
 	var block_type : Blocks.BLOCK_TYPES
 
-	for i in range(len(voxel_data)):
-		pos = TERRAIN_GENERATOR.get_block_pos(i)
-		packed_block_data = TERRAIN_GENERATOR.get_block_by_index(voxel_data, i)
-		block_data = TERRAIN_GENERATOR.unpack_block_data(packed_block_data)
-		block_type = block_data["block_type"]
-		if Blocks.is_air(block_type): continue
+	for x in range(TerrainGenerator.chunk_size.x):
+		for y in range(TerrainGenerator.chunk_size.y):
+			for z in range(TerrainGenerator.chunk_size.z):
+				pos = Vector3i(x, y, z)
+				block_data = TerrainGenerator.get_block_by_pos(voxel_data, pos)
+				block_type = block_data["block_type"]
+				if Blocks.is_air(block_type): continue
 
-		block_config["top_rotation"] = 0
+				block_config["top_rotation"] = 0
 
-		_create_block(mesh_surface_data, collider_mesh_data, Vector3(pos) * BLOCK_SIZE, BLOCK_SIZE, block_type)
-
-	#for x in range(TERRAIN_GENERATOR.chunk_size.x):
-		#for y in range(TERRAIN_GENERATOR.chunk_size.y):
-			##prints(y)
-			#for z in range(TERRAIN_GENERATOR.chunk_size.z):
-				#var block_data = TERRAIN_GENERATOR.get_block_by_index(voxel_data, Vector3i(x, y, z))
-				#var block_type = block_data["block_type"]
-				#if Blocks.is_air(block_type): continue
-#
-				#block_config["top_rotation"] = 0
-#
-				#_create_block(mesh_surface_data, collider_mesh_data, Vector3(x, y, z) * BLOCK_SIZE, BLOCK_SIZE, block_type)
+				_create_block(mesh_surface_data, collider_mesh_data, Vector3(pos) * BLOCK_SIZE, BLOCK_SIZE, block_type)
 
 	# Generate mesh with surfaces
 	vertex_count = 0
@@ -397,5 +413,5 @@ func _build_mesh() -> Dictionary:
 		"interaction_mesh": interaction_mesh,
 	}
 
-func _build_collider(mesh: ArrayMesh) -> ConcavePolygonShape3D:
+func build_collider(mesh: ArrayMesh) -> ConcavePolygonShape3D:
 	return mesh.create_trimesh_shape()

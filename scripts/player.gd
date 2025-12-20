@@ -41,16 +41,20 @@ func _process(_delta: float) -> void:
 		position = Vector3(0, 64, 0)
 		velocity = Vector3.ZERO
 
-	if Input.is_action_pressed("place_block"):
-		var new_orb = ORB_SCENE.instantiate()
-		get_node("/root/Main/Entity").add_child(new_orb)
-		new_orb.global_position = _spawner.global_position
-		var dir = _spawner.global_position - _camera.global_position
-		var rand = Vector3(randf_range(-1, 1), randf_range(-1, 1), randf_range(-1, 1)).normalized() * ORB_SPREAD
-		new_orb.apply_force(
-			velocity + dir.normalized() * ORB_SPEED + rand,
-			Vector3(0, 0, 0)
-		)
+	if Input.is_action_just_pressed("place_block"):
+		if Global.player_view_has_block:
+			var block_pos = Vector3i( Vector3(Global.player_place_block_pos) - Global.global_origin_offset )
+
+			TerrainGenerator.set_block_in_world(block_pos, Global.player_selected_block)
+			SignalBus.block_changed.emit(block_pos, Global.player_selected_block)
+
+	if Input.is_action_just_pressed("break_block"):
+		if Global.player_view_has_block:
+			var block_pos = Vector3i( Vector3(Global.player_view_block_pos) - Global.global_origin_offset )
+
+			TerrainGenerator.set_block_in_world(block_pos, Blocks.BLOCK_TYPES.air)
+			SignalBus.block_changed.emit(block_pos, Blocks.BLOCK_TYPES.air)
+
 
 	if _vision_ray.is_colliding():
 		_selected_block.show()
@@ -58,11 +62,16 @@ func _process(_delta: float) -> void:
 		var pos = _vision_ray.get_collision_point()
 		var norm = _vision_ray.get_collision_normal()
 		_point.global_position = pos
-		_selected_block.global_position = round(pos - norm * 0.01 - Vector3(0, 0.5, 0)) + Vector3(0, 0.5, 0)
+		#_selected_block.global_position = floor(pos - norm * 0.01 + Vector3(0.5, 0, 0.5)) - Vector3(0.5, 0, 0.5)
+		_selected_block.global_position = floor(pos - norm * 0.5 + Vector3(0.5, 0, 0.5)) - Vector3(0.5, 0, 0.5)
 		_selected_block.global_rotation = Vector3.ZERO
+		Global.player_view_block_pos = Vector3i( ceil(_selected_block.global_position) )
+		Global.player_place_block_pos = Vector3i( floor(pos + norm * 0.5 + Vector3(0.5, 0, 0.5)) )
+		Global.player_view_has_block = true
 	else:
 		_selected_block.hide()
 		#_point.hide()
+		Global.player_view_has_block = false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if frozen:
@@ -118,6 +127,10 @@ func _physics_process(delta: float) -> void:
 	_camera.rotation.x = deg_to_rad(_pitch)
 
 	Global.player_pos = position
+	Global.player_chunk_pos = Vector2(
+		fposmod(global_position.x + 0.5, TerrainGenerator.chunk_size.x),
+		fposmod(global_position.z + 0.5, TerrainGenerator.chunk_size.z),
+	)
 
 	move_and_slide()
 

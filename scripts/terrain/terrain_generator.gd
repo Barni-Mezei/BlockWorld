@@ -39,8 +39,9 @@ func _ready() -> void:
 
 		offset += length
 
+func set_seed(new_seed : int = -1) -> void:
+	if new_seed == -1: new_seed = randi()
 
-func set_seed(new_seed : int) -> void:
 	generator_seed = new_seed
 	PositionalNoiseGenerator.set_seed(new_seed)
 
@@ -107,21 +108,40 @@ func get_block_type(data : PackedInt32Array, pos : Vector3i) -> Blocks.BLOCK_TYP
 
 	return unpack_block_data_type(data[index]) as Blocks.BLOCK_TYPES
 
-func set_block_type(data : PackedInt32Array, pos : Vector3i, block_type : Blocks.BLOCK_TYPES) -> void:
+func set_block_type(
+	data : PackedInt32Array,
+	pos : Vector3i,
+	block_type : Blocks.BLOCK_TYPES
+) -> void:
 	var index : int = get_block_indexv(pos)
 	if index < 0 or index > data.size(): return
 
 	data[index] = set_packed_block_data(data[index], "block_type", block_type)
 
-func check_block_type(data : PackedInt32Array, pos : Vector3i, allowed_block_types : Array[Blocks.BLOCK_TYPES]) -> bool:
+func check_block_type(
+	data : PackedInt32Array,
+	pos : Vector3i,
+	allowed_block_types : Array[Blocks.BLOCK_TYPES]
+) -> bool:
 	var block_type = get_block_type(data, pos)
 	return block_type in allowed_block_types
 
-func replace_block(data : PackedInt32Array, pos : Vector3i, block_type : Blocks.BLOCK_TYPES, replaced_blocks : Array[Blocks.BLOCK_TYPES]) -> void:
+func replace_block(
+	data : PackedInt32Array,
+	pos : Vector3i,
+	block_type : Blocks.BLOCK_TYPES,
+	replaced_blocks : Array[Blocks.BLOCK_TYPES]
+) -> void:
 	if check_block_type(data, pos, replaced_blocks):
 		set_block_type(data, pos, block_type)
 
-func replace_sphere(data : PackedInt32Array, pos : Vector3i, radius : float, block_type : Blocks.BLOCK_TYPES, replaced_blocks : Array[Blocks.BLOCK_TYPES]) -> void:
+func replace_sphere(
+	data : PackedInt32Array,
+	pos : Vector3i,
+	radius : float,
+	block_type : Blocks.BLOCK_TYPES,
+	replaced_blocks : Array[Blocks.BLOCK_TYPES]
+) -> void:
 	var r_start : int = -int(round(radius))
 	var r_end : int = int(round(radius)) + 1
 	
@@ -132,7 +152,6 @@ func replace_sphere(data : PackedInt32Array, pos : Vector3i, radius : float, blo
 				if offset.length() > radius - 0.5: continue
 				var block_pos = pos + offset
 				replace_block(data, block_pos, block_type, replaced_blocks)
-
 
 
 ## Coordinate transforms
@@ -160,9 +179,10 @@ func world_to_chunk(pos : Vector3i) -> Vector3i:
 
 # World transforms
 func get_chunk_coordinate(pos : Vector3i) -> Vector2i:
+	@warning_ignore("integer_division")
 	return Vector2i(
-		snappedi(pos.x, chunk_size.x),
-		snappedi(pos.z, chunk_size.z),
+		snappedi(pos.x - chunk_size.x/2, chunk_size.x) / chunk_size.x,
+		snappedi(pos.z - chunk_size.x/2, chunk_size.z) / chunk_size.z,
 	)
 
 
@@ -187,12 +207,11 @@ func set_block_in_world(pos : Vector3i, block_type : Blocks.BLOCK_TYPES) -> bool
 	var chunk_pos = get_chunk_coordinate(pos)
 	if not chunk_exists(chunk_pos): return false
 
+	#prints("Setting block at", pos, "in chunk", chunk_pos, "at local", world_to_chunk(pos))
+
 	set_block_type(chunks[chunk_pos], world_to_chunk(pos), block_type)
 
 	return true
-
-
-
 
 
 
@@ -201,7 +220,8 @@ func sample_height_at(pos : Vector2) -> int:
 	return round(
 		clamp(remap( # Constrain the noise value between 0 and the specified world height
 			settings.height_noise.get_noise_2dv(pos),
-		-1, 1, settings.terrain_start, settings.terrain_end), settings.terrain_start, settings.terrain_end) 
+		-1, 1, settings.terrain_start, settings.terrain_end), # remap
+		settings.terrain_start, settings.terrain_end) # clamp
 	)
 
 func sample_cave_at(pos : Vector3) -> float:
@@ -233,39 +253,81 @@ func generate_oak_tree(data : PackedInt32Array, pos : Vector3i) -> void:
 				set_block_type(data, pos + Vector3i(x, y, z), Blocks.BLOCK_TYPES.oak_leaves)
 
 
+
 ## Terrain generators
 func generate_terrain():
 	chunks.clear()
 
 	for x in range(5):
 		for z in range(5):
-			# Generate chunks. Maybe around the player dinamically?
+			# Generate chunks. Maybe around the player dynamically?
 			pass
 
 
 ## Chunk generators
 func generate_chunk(chunk_pos : Vector2i, force : bool = false) -> PackedInt32Array:
 	if chunk_exists(chunk_pos) and not force: return get_chunk(chunk_pos)
-	
+
 	var data : PackedInt32Array = []
 	data.resize(chunk_size.x * chunk_size.y * chunk_size.z)
 
-	var chunk_offset = chunk_pos * Vector2i(chunk_size.x, chunk_size.z)
+	var chunk_offset := chunk_pos * Vector2i(chunk_size.x, chunk_size.z)
 
 	for x in range(0, chunk_size.x):
 		for z in range(0, chunk_size.z):
 			var current_height = sample_height_at(chunk_offset + Vector2i(x, z))
 
 			for y in range(0, chunk_size.y):
-				var block_type : Blocks.BLOCK_TYPES = Blocks.BLOCK_TYPES.air
+				var block_type := Blocks.BLOCK_TYPES.air
 
-				if y <= current_height: block_type = Blocks.BLOCK_TYPES.stone
-				if y < settings.deepslate_level + randi_range(-2, 2):
-					block_type = Blocks.BLOCK_TYPES.deepslate
+				if y <= current_height:
+					block_type = Blocks.BLOCK_TYPES.stone
 
-				if y == 0: block_type = Blocks.BLOCK_TYPES.bedrock
+					if y >= current_height - 3: block_type = Blocks.BLOCK_TYPES.dirt
+					if y == current_height: block_type = Blocks.BLOCK_TYPES.grass_block
+
+					if y < settings.deepslate_level + randi_range(-2, 2):
+						block_type = Blocks.BLOCK_TYPES.deepslate
+
+					if settings.enable_underground_patches and\
+					block_type in [Blocks.BLOCK_TYPES.stone] and\
+					randi_range(0, settings.underground_patch_frequency) == 0:
+						#u_blob_positions.append(Vector3(x, y, z))
+						pass
+
+					# Cave generation
+					var cave_threshold = 0
+					if y <= settings.deepslate_level:
+						var progress_y := remap(y, settings.deepslate_level,0, 0,1)
+						cave_threshold = settings.noise_cave_size_deepslate.sample(progress_y)
+					else:
+						var progress_y := remap(y, current_height,settings.deepslate_level, 0,1)
+						cave_threshold = settings.noise_cave_size_stone.sample(progress_y)
+
+					if settings.enable_caves and\
+					sample_cave_at(Vector3(x + chunk_offset.x, y, z + chunk_offset.y)) > cave_threshold:
+						block_type = Blocks.BLOCK_TYPES.cave_air
+				else:
+					# Above terrain
+					if settings.enable_trees and\
+					y == current_height + 1 and\
+					randi_range(0, settings.tree_frequency) == 0:
+						#tree_positions.append(Vector3(x, y, z))
+						pass
+
+					if settings.enable_foliage and\
+					y == current_height + 1\
+					and randi_range(0, settings.foliage_frequency) == 0:
+						if check_block_type(data, Vector3(x, y - 1, z), Blocks.get_block_group("foliage_can_spawn_on")):
+							if settings.use_bushes_in_foliage and randi_range(0, 5) == 0:
+								block_type = Blocks.BLOCK_TYPES.oak_leaves
+							else:
+								block_type = Blocks.BLOCK_TYPES.grass
 
 				set_block_type(data, Vector3i(x,y,z), block_type)
+
+	# Update world data
+	chunks[chunk_pos] = data
 
 	return data
 

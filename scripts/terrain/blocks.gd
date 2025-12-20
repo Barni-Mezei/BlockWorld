@@ -430,6 +430,12 @@ var BLOCK_GROUPS : Dictionary[String, Array] = {
 	] as Array[BLOCK_TYPES],
 }
 
+enum BIOMES {
+	plains,
+	forest,
+	birch_forest,
+}
+
 """
 
 Int 32:

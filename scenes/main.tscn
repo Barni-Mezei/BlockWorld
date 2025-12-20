@@ -1,12 +1,34 @@
-[gd_scene load_steps=8 format=3 uid="uid://dxufvvlicnsx6"]
+[gd_scene load_steps=15 format=3 uid="uid://dxufvvlicnsx6"]
 
 [ext_resource type="Script" uid="uid://c04vxog7ssp8b" path="res://scripts/main.gd" id="1_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://ckh5fiv5vobg6" path="res://scenes/player.tscn" id="2_sugp2"]
 [ext_resource type="Environment" uid="uid://c1acpb3fwjla5" path="res://materials/world_env.tres" id="2_tefeu"]
 [ext_resource type="CameraAttributesPractical" uid="uid://bf8yblbwqovjo" path="res://materials/camera_attributes.tres" id="3_o6xl0"]
 [ext_resource type="PackedScene" uid="uid://culku21hfsgxd" path="res://scenes/ui.tscn" id="3_sugp2"]
-[ext_resource type="PackedScene" uid="uid://baorgc5sxu2" path="res://scenes/terrain.tscn" id="3_tbgi4"]
+[ext_resource type="PackedScene" uid="uid://baorgc5sxu2" path="res://scenes/terrain/terrain.tscn" id="3_tbgi4"]
 [ext_resource type="Script" uid="uid://cn0iq5gaj46hx" path="res://scripts/orbit_camera.gd" id="5_o6xl0"]
+[ext_resource type="PackedScene" uid="uid://cy5pjy5visn14" path="res://scenes/structures/structure_loader.tscn" id="8_tipki"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o6xl0"]
+albedo_color = Color(0, 1, 0, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_85g3d"]
+material = SubResource("StandardMaterial3D_o6xl0")
+height = 63.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_choun"]
+albedo_color = Color(1, 0, 0, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tipki"]
+material = SubResource("StandardMaterial3D_choun")
+height = 64.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ya4ey"]
+albedo_color = Color(0, 0, 1, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_eb6dy"]
+material = SubResource("StandardMaterial3D_ya4ey")
+height = 64.0
 
 [node name="Main" type="Node"]
 script = ExtResource("1_jyhfs")
@@ -14,15 +36,44 @@ enable = true
 world_env = ExtResource("2_tefeu")
 camera_attributes = ExtResource("3_o6xl0")
 
-[node name="UI" parent="." instance=ExtResource("3_sugp2")]
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="UI" parent="CanvasLayer" instance=ExtResource("3_sugp2")]
 unique_name_in_owner = true
+
+[node name="OrbitCameraContainer" type="SubViewportContainer" parent="CanvasLayer"]
+unique_name_in_owner = true
+visible = false
+top_level = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+mouse_behavior_recursive = 1
+stretch = true
+mouse_target = true
+
+[node name="SubViewport" type="SubViewport" parent="CanvasLayer/OrbitCameraContainer"]
+handle_input_locally = false
+size = Vector2i(1920, 1080)
+render_target_update_mode = 0
+
+[node name="OrbitOrigin" type="Node3D" parent="CanvasLayer/OrbitCameraContainer/SubViewport"]
+script = ExtResource("5_o6xl0")
+
+[node name="Camera3D" type="Camera3D" parent="CanvasLayer/OrbitCameraContainer/SubViewport/OrbitOrigin"]
+transform = Transform3D(1, 0, 0, 0, 0.8949343, 0.44619778, 0, -0.44619778, 0.8949343, -0.5, 92, 150)
+fov = 45.0
+size = 128.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 unique_name_in_owner = true
 
 [node name="Player" parent="." instance=ExtResource("2_sugp2")]
 unique_name_in_owner = true
-transform = Transform3D(-0.7071068, 0, -0.7071066, 0, 1, 0, 0.7071066, 0, -0.7071068, 0, 0, 0)
+transform = Transform3D(0.9999999, 0, 0, 0, 1, 0, 0, 0, 0.9999999, 0, 0, 0)
 
 [node name="Terrain" parent="." instance=ExtResource("3_tbgi4")]
 unique_name_in_owner = true
@@ -40,30 +91,26 @@ directional_shadow_fade_start = 1.0
 directional_shadow_max_distance = 128.0
 directional_shadow_pancake_size = 7.2
 
-[node name="OrbitCameraContainer" type="SubViewportContainer" parent="."]
-unique_name_in_owner = true
+[node name="Objects" type="Node3D" parent="."]
 visible = false
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-mouse_behavior_recursive = 1
-stretch = true
-mouse_target = true
 
-[node name="SubViewport" type="SubViewport" parent="OrbitCameraContainer"]
-handle_input_locally = false
-size = Vector2i(1920, 1080)
-render_target_update_mode = 0
+[node name="AxisY" type="MeshInstance3D" parent="Objects"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 31.75, 0)
+mesh = SubResource("CylinderMesh_85g3d")
+skeleton = NodePath("../..")
 
-[node name="OrbitOrigin" type="Node3D" parent="OrbitCameraContainer/SubViewport"]
-script = ExtResource("5_o6xl0")
+[node name="AxisX" type="MeshInstance3D" parent="Objects"]
+transform = Transform3D(-4.371139e-08, 1, 4.371139e-08, 0, -4.371139e-08, 1, 1, 4.371139e-08, 1.9106855e-15, 32, 63.5, 0)
+mesh = SubResource("CylinderMesh_tipki")
+skeleton = NodePath("../..")
 
-[node name="Camera3D" type="Camera3D" parent="OrbitCameraContainer/SubViewport/OrbitOrigin"]
-transform = Transform3D(1, 0, 0, 0, 0.8949343, 0.44619778, 0, -0.44619778, 0.8949343, -0.5, 92, 150)
-fov = 22.9
-size = 128.0
+[node name="AxisZ" type="MeshInstance3D" parent="Objects"]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 63.5, 32)
+mesh = SubResource("CylinderMesh_eb6dy")
+skeleton = NodePath("../..")
 
 [node name="Entity" type="Node" parent="."]
+
+[node name="BlockEntity" type="Node" parent="."]
+
+[node name="Structures" parent="." instance=ExtResource("8_tipki")]

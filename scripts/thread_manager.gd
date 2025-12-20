@@ -2,7 +2,7 @@ extends Node
 
 signal thread_available
 
-const max_threads : int = 1 # 4 is optimal
+const max_threads : int = 4 # 4 is optimal
 
 var used_thread_count : int = 0
 var threads : Array[Dictionary]
@@ -50,7 +50,7 @@ func get_thread() -> Dictionary:
 	}
 
 func free_thread(thread_index : int) -> void:
-	mutex.lock()
+	mutex.try_lock()
 	threads[thread_index]["used"] = false
 	used_thread_count -= 1
 	mutex.unlock()
